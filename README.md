@@ -3,7 +3,7 @@
 RTL-SDR spectrum and waterfall scanner for Raspberry Pi 5, RTL-SDR Blog V4,
 and a Waveshare 3.5-inch 640×480 DSI touchscreen.
 
-Current version: RF Hunter v0.5.8 (`rf_hunter_v058_recording_metadata.py`).
+Current version: RF Hunter v0.5.9 (`rf_hunter_v059_display_rotation.py`).
 The original v0.4.3 source is retained for reference.
 
 ## Setup and launch
@@ -12,17 +12,32 @@ On Raspberry Pi OS, install the dependencies:
 
 ```sh
 sudo apt install -y rtl-sdr python3-numpy python3-pygame
-python3 rf_hunter_v058_recording_metadata.py
+python3 rf_hunter_v059_display_rotation.py
 ```
 
 The installed RTL-SDR tools must support your receiver.
 For a windowed simulation without radio hardware:
 
 ```sh
-python3 rf_hunter_v058_recording_metadata.py --demo --windowed
+python3 rf_hunter_v059_display_rotation.py --demo --windowed
 ```
 
 Use `--help` for launch options.
+
+## v0.5.9 display rotation
+
+Tap MENU > ROTATE 180 to flip the application and its touch mapping together.
+Tap again to return to normal. The recordings browser also has ROTATE 180 at
+the top right, including in standalone mode. The choice is saved immediately
+and shared by both modes, while preserving existing receiver settings.
+Mouse and native finger events use the same coordinate conversion; spectrum
+tuning, keypads, menus and recording rows all follow the rotation.
+
+This rotates RF Hunter only, not the Raspberry Pi desktop. If you already
+rotated the desktop and touch input in OS settings, leave the application at
+normal orientation unless you want an additional flip. `--rotation 0` or
+`--rotation 180` overrides the saved preference for that launch. For example:
+`python3 ~/rf_hunter.py --rotation 0`. Screenshots reflect the visible rotation.
 
 ## Touch tuning and recording
 
@@ -129,7 +144,7 @@ Both imports were syntax-checked on Windows. The user reports v0.5.5 works
 well; hardware behavior has not been independently tested here.
 
 Run `python3 -m unittest discover -s tests` with NumPy and Pygame installed.
-Twenty-three tests cover snapping, AM/NFM demodulation, monitoring/recording,
+Thirty-one tests cover display/touch rotation, persisted settings, snapping, AM/NFM demodulation, monitoring/recording,
 audio buffering/reset, WAV splitting/low disk space, touch routing, metadata
 accuracy, numeric sorting/filtering, legacy/corrupt metadata, playback and
 standalone operation without a radio worker. Dummy SDL audio/video tests and
