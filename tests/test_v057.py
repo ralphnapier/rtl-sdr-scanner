@@ -114,7 +114,7 @@ class AudioTests(unittest.TestCase):
             h.main()
         self.assertTrue(any('CONTROLS' in x for x in seen))
         self.assertTrue(any('KEYPAD' in x for x in seen))
-        self.assertTrue(any('FILES' in x for x in seen))
+        self.assertTrue(any('FILES' in x or 'RECORDINGS' in x for x in seen))
         self.assertTrue(any('14.000000 MHz' in x for x in seen))
 
 

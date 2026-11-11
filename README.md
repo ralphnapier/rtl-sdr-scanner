@@ -3,7 +3,7 @@
 RTL-SDR spectrum and waterfall scanner for Raspberry Pi 5, RTL-SDR Blog V4,
 and a Waveshare 3.5-inch 640×480 DSI touchscreen.
 
-Current version: RF Hunter v0.5.7 (`rf_hunter_v057_audio_controls.py`).
+Current version: RF Hunter v0.5.8 (`rf_hunter_v058_recording_metadata.py`).
 The original v0.4.3 source is retained for reference.
 
 ## Setup and launch
@@ -12,14 +12,14 @@ On Raspberry Pi OS, install the dependencies:
 
 ```sh
 sudo apt install -y rtl-sdr python3-numpy python3-pygame
-python3 rf_hunter_v057_audio_controls.py
+python3 rf_hunter_v058_recording_metadata.py
 ```
 
 The installed RTL-SDR tools must support your receiver.
 For a windowed simulation without radio hardware:
 
 ```sh
-python3 rf_hunter_v057_audio_controls.py --demo --windowed
+python3 rf_hunter_v058_recording_metadata.py --demo --windowed
 ```
 
 Use `--help` for launch options.
@@ -62,10 +62,8 @@ Listening and recording can operate together from the same I/Q stream.
 Bluetooth latency and routing depend on the OS/device; hardware verification
 is still needed. Audio errors appear in MENU without stopping RF acquisition.
 
-RECORDINGS lists WAV filenames (date, time, frequency and modulation) and
-durations. Tap a completed file to play it; this mutes live monitoring. STOP
-AUDIO or BACK stops file playback. Tap LISTEN again to resume monitoring.
-The list refreshes each time you open RECORDINGS.
+RECORDINGS opens the touchscreen library described below. Playing a file mutes
+live monitoring; tap LISTEN again to resume monitoring afterward.
 
 Recordings split at approximately five minutes. Recording stops below 100 MiB
 free space, checked at file creation and about once per second while writing.
@@ -74,6 +72,44 @@ After freeing space, toggle REC off and on to retry.
 
 System-output references: [Pygame mixer](https://www.pygame.org/docs/ref/mixer.html)
 and [Raspberry Pi audio outputs](https://projects.raspberrypi.org/en/projects/raspberry-pi-using/11).
+
+## v0.5.8 recording browser
+
+Open MENU > RECORDINGS. The library defaults to strongest peak signal first.
+Tap SORT to cycle through peak dB, average dB, date, frequency and duration.
+HIGH / NEW and LOW / OLD change sort direction. Unknown measurements always
+sort last. AM/NFM/ALL filters modulation, MIN PEAK filters peak signal strength,
+and FREQ opens a touchscreen prefix filter (for example, `125` matches
+125.xxx MHz). CLEAR then ENTER removes the frequency filter. REFRESH loads
+new recordings; folder scanning runs in the background.
+
+Tap a recording for details and PLAY, PAUSE/RESUME, STOP, volume and AUDIO RESET.
+BACK returns to the list while playback continues; leaving the browser stops
+playback. Files still being recorded by this scanner cannot be played from its
+embedded browser. Empty/damaged WAVs are listed as unavailable.
+
+The same browser can run independently, without starting the SDR. Run this
+from a terminal on the Pi desktop (rather than a plain SSH session):
+
+```sh
+python3 ~/rf_hunter.py --recordings-only
+```
+
+Before installing as `~/rf_hunter.py`, use the versioned filename instead.
+`--windowed` and `--recordings-dir /path/to/folder` also work in standalone mode.
+
+New recordings save a matching `.json` beside each WAV when the file closes.
+Keep these files together when copying recordings. Metadata includes exact
+frequency, modulation, timestamp with UTC offset, duration, tuner gain,
+peak and average **dB above local noise**, and completion status. These values
+are RF estimates, not calibrated dBm or audio loudness. Average is the
+sample-weighted arithmetic mean of dB readings, including pre-roll and quiet
+tail. Each five-minute segment has its own statistics. Sidecars are written
+atomically after WAV finalization; errors appear in the recording status.
+
+Older WAVs remain browsable and playable, but RF strength is Unknown because
+it was not stored. Missing, invalid or incomplete metadata never becomes an
+invented dB reading. No database server or new runtime dependency is needed.
 
 ## Modes
 
@@ -93,8 +129,11 @@ Both imports were syntax-checked on Windows. The user reports v0.5.5 works
 well; hardware behavior has not been independently tested here.
 
 Run `python3 -m unittest discover -s tests` with NumPy and Pygame installed.
-Twelve tests cover snapping, AM/NFM tone demodulation, simultaneous monitoring
-and recording, bounded audio buffering/reset, WAV splitting/low disk space,
-and touch-menu/keypad routing. Dummy SDL audio/video tests and rendered screen
-inspection passed on Windows. Physical Pi RF, touchscreen and Bluetooth audio
-testing remains pending.
+Twenty-three tests cover snapping, AM/NFM demodulation, monitoring/recording,
+audio buffering/reset, WAV splitting/low disk space, touch routing, metadata
+accuracy, numeric sorting/filtering, legacy/corrupt metadata, playback and
+standalone operation without a radio worker. Dummy SDL audio/video tests and
+640x480 screen inspection passed on Windows. Physical Pi RF, touchscreen and
+Bluetooth audio testing remains pending. `python tests/preview_recordings.py`
+renders library previews with synthetic recordings under the ignored `.qa/`
+folder.

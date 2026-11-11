@@ -8,3 +8,4 @@ venv/
 rf_hunter_hits.csv
 .DS_Store
 Thumbs.db
+.qa/
