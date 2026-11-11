@@ -3,7 +3,7 @@
 RTL-SDR spectrum and waterfall scanner for Raspberry Pi 5, RTL-SDR Blog V4,
 and a Waveshare 3.5-inch 640×480 DSI touchscreen.
 
-Current version: RF Hunter v0.5.9 (`rf_hunter_v059_display_rotation.py`).
+Current version: RF Hunter v0.6.0 (`rf_hunter_v060_encoder.py`).
 The original v0.4.3 source is retained for reference.
 
 ## Setup and launch
@@ -11,18 +11,75 @@ The original v0.4.3 source is retained for reference.
 On Raspberry Pi OS, install the dependencies:
 
 ```sh
-sudo apt install -y rtl-sdr python3-numpy python3-pygame
-python3 rf_hunter_v059_display_rotation.py
+sudo apt install -y rtl-sdr python3-numpy python3-pygame python3-gpiozero python3-lgpio
+python3 rf_hunter_v060_encoder.py
 ```
 
 The installed RTL-SDR tools must support your receiver.
 For a windowed simulation without radio hardware:
 
 ```sh
-python3 rf_hunter_v059_display_rotation.py --demo --windowed
+python3 rf_hunter_v060_encoder.py --demo --windowed
 ```
 
 Use `--help` for launch options.
+
+## v0.6.0 rotary tuning dial
+
+The KY-040-style encoder uses these fixed BCM GPIO assignments. Shut down and
+unplug the Pi before wiring; make sure these GPIOs are not used by other hardware.
+
+| Module label | Pi connection | Physical header pin |
+| --- | --- | --- |
+| CLK | GPIO17 | 11 |
+| DT | GPIO27 | 13 |
+| SW | GPIO22 | 15 |
+| + | **3.3 V (not 5 V)** | 1 |
+| GND | Ground | 6 |
+
+Encoder inputs are enabled on normal launch unless disabled in saved settings.
+GPIO Zero uses lgpio with input pull-ups and a debounced pushbutton. The header
+GPIO chip is found by its controller label rather than assuming a chip number.
+If GPIO support is missing or unavailable, the scanner still opens with touch
+controls. MENU > ENCODER shows status/errors and has ENABLE/DISABLE, direction
+reversal, RETRY GPIO, and a step selector. GPIO ready means the inputs opened;
+it does not prove the physical encoder is connected.
+
+- Turn to tune the listening frequency. Turning from WIDE/HITS switches to LIVE.
+- Short click/release snaps to the **nearest** qualifying local peak within
+  +/-12.5 kHz. Peaks must exceed local background by at least 8 dB or the current
+  squelch, whichever is higher. This is an RF activity estimate, not proof of a
+  transmitter. No qualifying peak leaves tuning unchanged.
+- Click snapping requires LIVE mode. It waits up to 1.5 seconds for fresh data
+  after a retune. A later tune cancels a pending snap. DC/edge-invalid bins and
+  coarse/gapped data are excluded.
+- Hold approximately 0.8 seconds to cycle 1 / 2.5 / 5 / 8.333 / 12.5 / 25 kHz
+  steps. The 8.333 kHz setting is approximate, not aviation channel numbering.
+  Releasing after a hold does not also snap.
+- Direction, enabled state and step are remembered. App display rotation does
+  not reverse the physical dial. Dial input is ignored in keypads and the
+  recording browser; standalone browsing never claims GPIO pins.
+
+GPIO callbacks only enqueue bounded commands. The UI applies tuning on its own
+thread and combines rapid turns into one update per frame. Tuning is bounded to
+1.1–1765 MHz. Stale queued input is discarded rather than applied much later.
+
+For a wiring test from SSH, close RF Hunter first (only one process can own the
+pins), then run this after installing the current file as `~/rf_hunter.py`:
+
+```sh
+python3 ~/rf_hunter.py --encoder-test
+```
+
+It prints TUNE UP/DOWN, CLICK / SNAP, or HOLD / STEP without opening the SDR or
+display. Ctrl+C exits. If direction is wrong, use MENU > ENCODER > DIR or test
+with `--encoder-reverse`. `--no-encoder` leaves pins unused; `--encoder` enables
+them explicitly, including in demo mode. `--gpiochip 0` overrides chip detection
+when the header controller is known to be chip 0. Run as your normal desktop
+user with GPIO access; do not use sudo to launch the GUI/audio application.
+
+References: [GPIO Zero rotary input](https://gpiozero.readthedocs.io/en/stable/api_input.html)
+and [lgpio backend](https://gpiozero.readthedocs.io/en/stable/_modules/gpiozero/pins/lgpio.html).
 
 ## v0.5.9 display rotation
 
@@ -65,7 +122,8 @@ Demo mode does not record or generate live audio. Use `--touch-debug` for diagno
 Tap MENU for frequency entry, selectable fine-tuning steps, recording/listening
 squelch (0–40 dB), live listening/mute, volume, recordings, and RF/VIS controls.
 Squelch defaults to 8 dB independently of the hit-detection `--threshold`.
-The new controls reset to defaults on restart. The 8.333 kHz step is approximate;
+Squelch and volume reset to defaults on restart; the tuning step is now saved.
+The 8.333 kHz step is approximate;
 it is not an aviation channel-number converter. Enter actual frequencies in MHz.
 
 To use Bluetooth, pair/connect the speaker or headphones in Raspberry Pi OS,
@@ -143,12 +201,15 @@ Settings are stored at `~/.config/rf_hunter/settings.json` and hits at
 Both imports were syntax-checked on Windows. The user reports v0.5.5 works
 well; hardware behavior has not been independently tested here.
 
-Run `python3 -m unittest discover -s tests` with NumPy and Pygame installed.
-Thirty-one tests cover display/touch rotation, persisted settings, snapping, AM/NFM demodulation, monitoring/recording,
+Run `python3 -m unittest discover -s tests` with NumPy, Pygame and GPIO Zero installed.
+Fifty-five tests cover simulated encoder quadrature/bounce, click/hold handling,
+GPIO cleanup, chip discovery, terminal diagnostics, nearest-peak selection,
+actual UI tuning, display/touch rotation, persisted settings, snapping, AM/NFM demodulation, monitoring/recording,
 audio buffering/reset, WAV splitting/low disk space, touch routing, metadata
 accuracy, numeric sorting/filtering, legacy/corrupt metadata, playback and
 standalone operation without a radio worker. Dummy SDL audio/video tests and
-640x480 screen inspection passed on Windows. Physical Pi RF, touchscreen and
-Bluetooth audio testing remains pending. `python tests/preview_recordings.py`
+640x480 screen inspection passed on Windows. Physical Pi RF, encoder, touchscreen
+and Bluetooth audio testing remains pending. `python tests/preview_recordings.py`
 renders library previews with synthetic recordings under the ignored `.qa/`
-folder.
+folder. `python tests/preview_encoder.py` renders the encoder settings screen
+with simulated GPIO and isolated settings.

@@ -110,7 +110,7 @@ class AudioTests(unittest.TestCase):
         def label(*args, **kwargs):
             seen.append(str(args[2]))
             return original_label(*args, **kwargs)
-        with patch('sys.argv', ['hunter', '--demo', '--windowed']), patch.object(h, 'save_settings'), patch.object(h, 'load_settings', return_value={}), patch.object(h.pygame.event, 'get', side_effect=events), patch.object(h, 'label', side_effect=label):
+        with tempfile.TemporaryDirectory() as directory, patch.object(h, 'SETTINGS_FILE', Path(directory)/'settings.json'), patch('sys.argv', ['hunter', '--demo', '--windowed']), patch.object(h, 'save_settings'), patch.object(h, 'load_settings', return_value={}), patch.object(h.pygame.event, 'get', side_effect=events), patch.object(h.pygame.time, 'get_ticks', side_effect=lambda: frames[0]*150), patch.object(h, 'label', side_effect=label):
             h.main()
         self.assertTrue(any('CONTROLS' in x for x in seen))
         self.assertTrue(any('KEYPAD' in x for x in seen))
