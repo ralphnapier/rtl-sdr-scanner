@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+*.log
+rf_hunter_hits.csv
+.DS_Store
+Thumbs.db
