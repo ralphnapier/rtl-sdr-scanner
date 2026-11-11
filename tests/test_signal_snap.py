@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 import unittest
 
-source = Path(__file__).resolve().parents[1] / 'rf_hunter_v056_signal_snap.py'
+source = Path(__file__).resolve().parents[1] / 'rf_hunter_v057_audio_controls.py'
 tree = ast.parse(source.read_text(encoding='utf-8'))
 function = next(n for n in tree.body if isinstance(n, ast.FunctionDef)
                 and n.name == 'snap_to_signal')
