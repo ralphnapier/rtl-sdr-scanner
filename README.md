@@ -3,7 +3,7 @@
 RTL-SDR spectrum and waterfall scanner for Raspberry Pi 5, RTL-SDR Blog V4,
 and a Waveshare 3.5-inch 640×480 DSI touchscreen.
 
-Current version: RF Hunter v0.6.1 (`rf_hunter_v061_recovery.py`).
+Current version: RF Hunter v0.6.2 (`rf_hunter_v062_diagnostics.py`).
 The original v0.4.3 source is retained for reference.
 
 ## Setup and launch
@@ -12,17 +12,29 @@ On Raspberry Pi OS, install the dependencies:
 
 ```sh
 sudo apt install -y rtl-sdr python3-numpy python3-pygame python3-gpiozero python3-lgpio
-python3 rf_hunter_v061_recovery.py
+python3 rf_hunter_v062_diagnostics.py
 ```
 
 The installed RTL-SDR tools must support your receiver.
 For a windowed simulation without radio hardware:
 
 ```sh
-python3 rf_hunter_v061_recovery.py --demo --windowed
+python3 rf_hunter_v062_diagnostics.py --demo --windowed
 ```
 
 Use `--help` for launch options.
+
+## v0.6.2 diagnostics overlay
+
+Tap **DIAG** at the top right of the waterfall to show or hide a translucent
+health card. It displays overall CPU use, used/total RAM, and up to two thermal
+sensors reported by the Pi. Readings refresh once per second while visible. The
+button works in LIVE and WIDE, including when the display/touch is rotated 180°.
+The `D` key also toggles it. No extra Python package is needed.
+
+The RTL-SDR does not expose a temperature reading through this program. The card
+labels that reading as unavailable; Pi sensors that are absent or unreadable are
+shown as unavailable. The overlay starts hidden on each launch.
 
 ## v0.6.1 WIDE receiver recovery
 
