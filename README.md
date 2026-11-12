@@ -3,7 +3,7 @@
 RTL-SDR spectrum and waterfall scanner for Raspberry Pi 5, RTL-SDR Blog V4,
 and a Waveshare 3.5-inch 640×480 DSI touchscreen.
 
-Current version: RF Hunter v0.6.0 (`rf_hunter_v060_encoder.py`).
+Current version: RF Hunter v0.6.1 (`rf_hunter_v061_recovery.py`).
 The original v0.4.3 source is retained for reference.
 
 ## Setup and launch
@@ -12,17 +12,47 @@ On Raspberry Pi OS, install the dependencies:
 
 ```sh
 sudo apt install -y rtl-sdr python3-numpy python3-pygame python3-gpiozero python3-lgpio
-python3 rf_hunter_v060_encoder.py
+python3 rf_hunter_v061_recovery.py
 ```
 
 The installed RTL-SDR tools must support your receiver.
 For a windowed simulation without radio hardware:
 
 ```sh
-python3 rf_hunter_v060_encoder.py --demo --windowed
+python3 rf_hunter_v061_recovery.py --demo --windowed
 ```
 
 Use `--help` for launch options.
+
+## v0.6.1 WIDE receiver recovery
+
+When `rtl_power` ends its CSV stream, RF Hunter reads its exit code and recent
+error output, closes the process, and tries to reopen it. Three consecutive
+short WIDE failures trigger one USB-level reset of the SDR dongle, followed by
+a new receive attempt. A brief sweep that fails before two completed sweeps
+still counts toward recovery. Two completed sweeps clear the failure streak.
+The reset is rate-limited and will not repeat until successful reception has
+been observed. Retries back off to at most ten seconds when failures continue.
+
+The reset only targets a single detected Realtek `0bda:2838` USB device. It
+never cycles the Pi's entire USB hub. Missing or multiple matching devices,
+unsupported platforms, or missing permissions leave software retries active
+and display a reason for the skipped reset. `--no-usb-recovery` disables USB
+resets. A USB-level reset does not remove power; a hardware fault may still
+need a physical power cycle or a power/cable investigation.
+
+Receiver diagnostics now survive reboot in
+`~/.local/state/rf_hunter/receiver.log`. On the Pi, read the last entries with:
+
+```sh
+tail -n 80 ~/.local/state/rf_hunter/receiver.log
+```
+
+If it remains stuck, that log and `dmesg -T | tail -n 80` can help distinguish
+receiver, USB, and power issues. The earlier version's temporary log was at
+`/tmp/rf_hunter_rtlsdr.log` and is lost on reboot.
+
+Reference: [Linux USB device reset API](https://docs.kernel.org/6.12/driver-api/usb/usb.html).
 
 ## v0.6.0 rotary tuning dial
 
@@ -202,7 +232,7 @@ Both imports were syntax-checked on Windows. The user reports v0.5.5 works
 well; hardware behavior has not been independently tested here.
 
 Run `python3 -m unittest discover -s tests` with NumPy, Pygame and GPIO Zero installed.
-Fifty-five tests cover simulated encoder quadrature/bounce, click/hold handling,
+Sixty-five tests cover receiver retry and scoped USB recovery, simulated encoder quadrature/bounce, click/hold handling,
 GPIO cleanup, chip discovery, terminal diagnostics, nearest-peak selection,
 actual UI tuning, display/touch rotation, persisted settings, snapping, AM/NFM demodulation, monitoring/recording,
 audio buffering/reset, WAV splitting/low disk space, touch routing, metadata
