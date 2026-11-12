@@ -3,7 +3,7 @@
 RTL-SDR spectrum and waterfall scanner for Raspberry Pi 5, RTL-SDR Blog V4,
 and a Waveshare 3.5-inch 640×480 DSI touchscreen.
 
-Current version: RF Hunter v0.6.2 (`rf_hunter_v062_diagnostics.py`).
+Current version: RF Hunter v0.6.3 (`rf_hunter_v063_frequency_names.py`).
 The original v0.4.3 source is retained for reference.
 
 ## Setup and launch
@@ -12,17 +12,54 @@ On Raspberry Pi OS, install the dependencies:
 
 ```sh
 sudo apt install -y rtl-sdr python3-numpy python3-pygame python3-gpiozero python3-lgpio
-python3 rf_hunter_v062_diagnostics.py
+python3 rf_hunter_v063_frequency_names.py
 ```
 
 The installed RTL-SDR tools must support your receiver.
 For a windowed simulation without radio hardware:
 
 ```sh
-python3 rf_hunter_v062_diagnostics.py --demo --windowed
+python3 rf_hunter_v063_frequency_names.py --demo --windowed
 ```
 
 Use `--help` for launch options.
+
+## v0.6.3 saved frequency names
+
+Open **MENU > NAMES**. **SAVE CURRENT** stores the listening frequency;
+**RENAME** opens a touchscreen keyboard for your own name; **CLEAR** removes
+that manual name so a downloaded name can show again. Tap a saved row to
+select it, then **TUNE** to listen. Named frequencies are shown next to the
+LIVE target and in the HITS list. Names are stored locally at
+`~/.config/rf_hunter/frequencies.json` and survive upgrades. Your own names
+always take priority over downloaded names. The list holds up to 500 entries.
+
+**UPDATE NAMES** looks for active analog repeaters within 50 km of Florence,
+Kentucky, using [Open Repeater](https://www.openrepeater.org/docs). It updates
+only frequencies you have saved, skips channels with multiple possible
+repeaters, and never changes your own names. This is a manual, online update;
+the scanner keeps running while it downloads. Repeater data is reference
+information, not proof that a particular signal comes from that repeater.
+
+Open Repeater requires a free personal API key. Register and find your key from
+its [API page](https://www.openrepeater.org/api-docs), then on the Pi create
+`~/.config/rf_hunter/openrepeater.key` containing only your `or_...` key:
+
+```sh
+mkdir -p ~/.config/rf_hunter
+nano ~/.config/rf_hunter/openrepeater.key
+chmod 600 ~/.config/rf_hunter/openrepeater.key
+```
+
+In nano, paste the key, press Ctrl+O, Enter, then Ctrl+X. Keep this key on the
+Pi; never add it to GitHub. Open Repeater currently allows 30 API requests per
+day per key. A refresh uses up to three requests. A missing key, network error,
+limit, or unexpected response is shown on the NAMES screen without disturbing
+the saved list.
+
+RepeaterBook currently requires approved, token-based API access for client
+apps; its public pages cannot be used to build a local repeater directory.
+See [RepeaterBook API policy](https://www.repeaterbook.com/wiki/doku.php?id=api).
 
 ## v0.6.2 diagnostics overlay
 
