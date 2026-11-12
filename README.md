@@ -3,7 +3,7 @@
 RTL-SDR spectrum and waterfall scanner for Raspberry Pi 5, RTL-SDR Blog V4,
 and a Waveshare 3.5-inch 640×480 DSI touchscreen.
 
-Current version: RF Hunter v0.6.3 (`rf_hunter_v063_frequency_names.py`).
+Current version: RF Hunter v0.6.4 (`rf_hunter_v064_robustness.py`).
 The original v0.4.3 source is retained for reference.
 
 ## Setup and launch
@@ -12,17 +12,32 @@ On Raspberry Pi OS, install the dependencies:
 
 ```sh
 sudo apt install -y rtl-sdr python3-numpy python3-pygame python3-gpiozero python3-lgpio
-python3 rf_hunter_v063_frequency_names.py
+python3 rf_hunter_v064_robustness.py
 ```
 
 The installed RTL-SDR tools must support your receiver.
 For a windowed simulation without radio hardware:
 
 ```sh
-python3 rf_hunter_v063_frequency_names.py --demo --windowed
+python3 rf_hunter_v064_robustness.py --demo --windowed
 ```
 
 Use `--help` for launch options.
+
+## v0.6.4 robustness checks
+
+WIDE now requires completed, usable sweeps as well as incoming CSV bytes. A
+stream of malformed or truncated rows triggers receiver retry and the existing
+targeted USB recovery path rather than leaving the waterfall stale forever.
+Receiver logs rotate near 5 MiB, retaining one previous log as
+`~/.local/state/rf_hunter/receiver.log.1`. A subprocess stdout-close error
+cannot end the radio worker.
+
+A damaged or unreadable `frequencies.json` is preserved and shown as an error
+on the NAMES screen. Saves refuse to overwrite it. After a complete online
+refresh, vanished or ambiguous repeater matches lose their old online labels;
+your manual names remain. A failed or incomplete refresh leaves existing names
+alone.
 
 ## v0.6.3 saved frequency names
 
